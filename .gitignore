@@ -1,0 +1,39 @@
+# Architecture dependencies and compiled binaries
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.dylib
+
+# Compiled outputs (standard Go build names)
+bin/
+out/
+dist/
+# If you build your main binary into the root directory, uncomment below:
+# /your-project-binary-name
+
+# Tools used for managing dependencies
+# (Do NOT ignore go.sum)
+.go/
+
+# Test coverage outputs and profiles
+*.out
+*.prof
+*.test
+coverage.txt
+
+# Local development configuration & secrets
+.env
+.env.local
+*.secret
+
+# IDE and Editor configurations
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~

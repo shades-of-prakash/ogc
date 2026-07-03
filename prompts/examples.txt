@@ -1,0 +1,78 @@
+### example-1 [FIX]
+[FIX] web: fix json error while evaluating default filters
+#202890
+
+Steps to Reproduce:
+1. Go to Sales
+2. Make a user-defined filter and make it the default filter
+3. Try to access the JSON link (/json/sales)
+4. You will see an error
+
+Issue:
+When users apply default filters like 'My Quotations' or 'My Documents', Odoo saves 'uid' in the filter's domain to represent the logged-in user.
+However, when the system tries to process this filter, it fails because 'uid' is just a placeholder and not a valid value. This results in an internal server error, preventing users from applying these filters correctly.
+
+Cause:
+This issue is caused after this commit: #182196
+The domain string stored in 'ir.filters' includes 'uid' instead of the actual user ID.
+When Odoo('ast.literal_eval()') tries to evaluate the filter, it doesn’t know what 'uid' means, causing an error.
+
+Fix:
+Replace 'uid' with str(model.env.uid) before evaluating the domain.
+This ensures 'ast.literal_eval()' processes a valid domain.
+
+### example-2 [IMP]
+[IMP] website_sale: add video from frontend
+#189396
+
+Prior to this commit:
+- Only images were supported for upload in product templates and variants.
+- The handling for videos was missing, limiting multimedia options for products.
+- The AttachmentMediaDialog was set to handle only images using the onlyImages property, blocking video uploads.
+- Image processing was limited to certain formats and required extra handling for webp conversion.
+
+Post this commit:
+- Both images and videos are now supported for upload in product templates and variants.
+- The backend can differentiate between image and video types and process them accordingly.
+- The frontend now uses extraMediaSave to handle different media types (image or video).
+
+Why This Approach:
+- This approach ensures flexibility for handling both images and videos in the same dialog without needing additional props or complex changes.
+- By modifying the existing structure, we avoid introducing unnecessary complexity while keeping backward compatibility.
+- The use of extraMediaSave allows clear and reusable logic to process different media types.
+
+Challenges Faced:
+- Ensuring that both image and video tabs were displayed correctly in the dialog.
+- Handling video files while maintaining the existing image-specific logic.
+- Properly generating and storing video thumbnails alongside the video URL in the backend.
+
+### example-3 [ADD]
+[ADD] estate: add property tags and type classification
+#782910
+
+Purpose of this commit:
+- Real estate managers need to classify properties by categories (like residential, commercial) and tag them with attributes (like garden, pool, cozy) to improve searching and filtering.
+
+Implementation Details:
+- Created the 'estate.property.tag' model with fields 'name' and 'color'.
+- Created the 'estate.property.type' model with 'name' and a computed field for type count.
+- Added Many2one field 'property_type_id' and Many2many field 'tag_ids' to the 'estate.property' model.
+- Added Kanban, Tree, and Form views for property tags and types under a configuration menu.
+
+Key Configuration:
+- Added access control rules (ir.model.access.csv) to allow group 'estate_group_user' full read/write permissions on the tags and types.
+
+### example-4 [REF]
+[REF] estate: refactor computed fields on property offer
+#982103
+
+Prior to this commit:
+- Property offer validity and deadline computation used separate onchange handlers.
+- The onchanges did not sync correctly if the fields were changed programmatically or in a batch operation.
+
+Post this commit:
+- Replaced the onchange handlers with computed fields 'validity' and 'date_deadline'.
+- Implemented an inverse method for 'date_deadline' to allow bidirectional updates.
+
+Why This Approach:
+- Computed fields with inverse methods are evaluated on the backend during write/create operations, ensuring consistency across API and UI updates, unlike UI-only onchange handlers.
