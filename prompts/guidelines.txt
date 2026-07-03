@@ -209,7 +209,7 @@ KEY RULES
 - BE CONCISE, DIRECT, AND BALANCED: Explain what was done and what was not (both technical and non-technical aspects). Use exactly 2 to 3 concise, high-density bullet points or sentences per section. Keep it focused for code reviewers.
 - Avoid vague phrases like "fixed the issue" or "improved logic". Be explicit about what models, methods, and conditions changed.
 - Do NOT wrap lines or insert newlines in the middle of sentences or bullet points. Output each bullet point and each paragraph as a single continuous line. The system will handle the line wrapping.
-- The entire generated commit message MUST NOT exceed 1500 characters in total (this is a strict hard limit).
+- The entire generated commit message MUST NOT exceed 800 characters in total (this is a strict hard limit).
 - Output ONLY the final raw commit message (no preambles, explanations, or code fences).
 
 HUMANIZATION & TONE RULES
@@ -222,5 +222,5 @@ HUMANIZATION & TONE RULES
   * "This change aims to..." / "This update modifies..."
 - Focus heavily on "Why" the change was made (the logic, the business reason, or the technical constraint) instead of just summarizing "What" lines were changed.
 - Write with active verbs and direct phrasing. For example, use "Raise ValidationError if price drops" instead of "Added validation check to ensure price doesn't drop".
-- Keep descriptions and bullet points short, precise, and punchy. The entire commit message must be under 1500 characters, so condense all sections as much as possible to remain highly informative yet compact. Avoid any fluff.
+- Keep descriptions and bullet points short, precise, and punchy. The entire commit message must be under 800 characters, so condense all sections as much as possible to remain highly informative yet compact. Avoid any fluff.
 
