@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Build binaries
+        run: |
+          mkdir -p build
+          # Build Linux
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build/ogc-linux-amd64
+          GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o build/ogc-linux-arm64
+          GOOS=linux GOARCH=386 go build -ldflags="-s -w" -o build/ogc-linux-386
+          GOOS=linux GOARCH=arm go build -ldflags="-s -w" -o build/ogc-linux-arm
+          
+          # Build Darwin (macOS)
+          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build/ogc-darwin-amd64
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/ogc-darwin-arm64
+          
+          # Build FreeBSD
+          GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o build/ogc-freebsd-amd64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/ogc-linux-amd64
+            build/ogc-linux-arm64
+            build/ogc-linux-386
+            build/ogc-linux-arm
+            build/ogc-darwin-amd64
+            build/ogc-darwin-arm64
+            build/ogc-freebsd-amd64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
