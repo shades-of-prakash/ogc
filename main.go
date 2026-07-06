@@ -52,6 +52,100 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "ogc [flags] <path>",
 		Short: "Generate commit messages from clipboard or editor input",
+		Long: strings.NewReplacer(
+			"{Reset}", Reset,
+			"{BoldRed}", BoldRed,
+			"{BoldGreen}", BoldGreen,
+			"{BoldYellow}", BoldYellow,
+			"{BoldBlue}", BoldBlue,
+			"{BoldPurple}", BoldPurple,
+			"{BoldCyan}", BoldCyan,
+			"{Gray}", Gray,
+		).Replace(`{BoldPurple}OGC (Odoo Git Commit) — AI-Powered Commit Message Generator{Reset}
+
+OGC is a CLI tool designed to help developers write high-quality, guidelines-compliant Odoo commit messages. 
+It analyzes the git diff of your changes along with task descriptions (sourced from your clipboard or editor)
+and uses Gemini to structure a perfect, standard-compliant commit message.
+
+{BoldYellow}🚀 FIRST-TIME SETUP GUIDE{Reset}
+When you run OGC for the very first time, it will {BoldGreen}automatically{Reset} 
+initialize a default configuration folder and file on your system.
+
+1. {BoldGreen}Automatic File Creation{Reset}:
+   On your first run, OGC detects if the config file exists. If not, it automatically creates:
+     {BoldCyan}~/.config/ogc/config.toml{Reset}
+   (If it creates the file, OGC will print a message and exit, allowing you to edit the file).
+
+2. {BoldGreen}Get a Gemini API Key{Reset}:
+   You need a Google Gemini API key to generate commit messages. 
+   Go to {BoldBlue}https://aistudio.google.com/app/apikey{Reset} and generate a FREE API key.
+
+3. {BoldGreen}Configure your API Key{Reset}:
+   Open the automatically created file in your editor (e.g., nano, vim, VS Code) and add your key:
+   
+     {BoldCyan}nano ~/.config/ogc/config.toml{Reset}
+     
+   Inside the file, enter your key inside the quotes of {BoldCyan}api_key{Reset}:
+   
+     {Gray}# ~/.config/ogc/config.toml{Reset}
+     {Gray}api_key = "YOUR_GEMINI_API_KEY_HERE"{Reset}
+     {Gray}model = "gemini-2.5-flash"      # Recommended models: gemini-2.5-flash or gemini-2.5-pro{Reset}
+     {Gray}line_length = 80              # Word wrap character limit per line (default: 80){Reset}
+
+{BoldYellow}🔄 STEP-BY-STEP DEVELOPER WORKFLOW (USER FLOW){Reset}
+
+1. {BoldGreen}Stage Your Changes (Crucial!){Reset}:
+   OGC needs staged changes to read the git diff. Always stage your changes first:
+     {BoldCyan}git add .{Reset}  (or git add path/to/file.py)
+
+2. {BoldGreen}Select Your Task Source{Reset}:
+   - {BoldCyan}Option A: Clipboard (-c){Reset}
+     Copy your task description or ticket details (from JIRA, GitHub, Odoo, etc.).
+     OGC will automatically fetch it from your system clipboard.
+   - {BoldCyan}Option B: Editor (-e){Reset}
+     If you want to manually write/paste notes, OGC will launch a terminal editor (like nano)
+     so you can describe the task details inline.
+   - {BoldCyan}Option C: No Task Description (Neither flag){Reset}
+     If you omit both flags, OGC will generate the commit message purely from your staged git diff.
+
+3. {BoldGreen}Run OGC{Reset}:
+   Provide the module name, task/issue ID, input source (optional), and path to your git repo:
+     {BoldCyan}ogc -m estate -i 3042512 .{Reset}
+
+4. {BoldGreen}Confirm and Generate{Reset}:
+   - If using clipboard (-c), OGC shows a preview of your clipboard content and asks for confirmation:
+     "Do you want to generate a commit message using this clipboard content? (y/N)"
+   - Otherwise, OGC will immediately start communicating with Gemini using your git diff.
+
+5. {BoldGreen}Copy & Commit{Reset}:
+   OGC asks: "Teleport this masterpiece directly to your clipboard? (y/N)"
+   - Press {BoldGreen}y{Reset} to copy it.
+   - Run {BoldCyan}git commit{Reset} and paste the message directly from your clipboard!
+
+{BoldYellow}💡 COMMAND LINE FLAGS{Reset}
+
+{BoldYellow}Input Source Flags (Optional - choose at most one):{Reset}
+  {BoldCyan}-c, --clipboard{Reset}   Use task details/issue description copied to your system clipboard.
+  {BoldCyan}-e, --editor{Reset}      Open an interactive terminal editor to type/paste task details.
+                           (If neither is chosen, OGC generates message purely from git diff).
+
+{BoldGreen}Required Context Flags:{Reset}
+  {BoldCyan}-m, --module{Reset}      The target Odoo module name (e.g. 'estate', 'account', 'sale').
+  {BoldCyan}-i, --task{Reset}        The task ID or issue reference (e.g. '3049582' or '#42') to append.
+
+{BoldGreen}Optional Flags:{Reset}
+  {BoldCyan}-t, --tag{Reset}         Force a specific Odoo tag (e.g., 'FIX', 'IMP', 'ADD', 'REF', 'REM').
+                     If omitted, Gemini will auto-detect the best tag based on your diff.
+
+{BoldGreen}Example Commands:{Reset}
+  # Generate message using only the staged git diff (no task description):
+  {BoldGreen}ogc -m estate -i 3042512 .{Reset}
+
+  # Generate message for 'estate' module using task description in clipboard:
+  {BoldGreen}ogc -c -m estate -i 3042512 .{Reset}
+
+  # Force a [FIX] tag and open an editor to describe the bug:
+  {BoldGreen}ogc -e -m sale -i 9845 -t FIX /path/to/odoo/addons{Reset}`),
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("exactly one path argument is required")
@@ -254,7 +348,6 @@ func main() {
 		"Task ID or Issue reference to append at the end of the commit message",
 	)
 
-	rootCmd.MarkFlagsOneRequired("clipboard", "editor")
 	rootCmd.MarkFlagsMutuallyExclusive("clipboard", "editor")
 
 	if err := rootCmd.Execute(); err != nil {

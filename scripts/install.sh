@@ -54,15 +54,28 @@ check_path() {
 }
 
 download_file() {
-    _url="$1"
-    _dest="$2"
-    if has_cmd curl; then
-        curl -sLS -o "$_dest" "$_url"
-    elif has_cmd wget; then
-        wget -qO "$_dest" "$_url"
-    else
-        return 1
-    fi
+	_url="$1"
+	_dest="$2"
+	if has_cmd curl; then
+		curl -sLS -o "$_dest" "$_url"
+	elif has_cmd wget; then
+		wget -qO "$_dest" "$_url"
+	else
+		return 1
+	fi
+}
+
+calculate_sha256() {
+	_file="$1"
+	if has_cmd sha256sum; then
+		sha256sum "$_file" | cut -d' ' -f1
+	elif has_cmd shasum; then
+		shasum -a 256 "$_file" | cut -d' ' -f1
+	elif has_cmd openssl; then
+		openssl dgst -sha256 "$_file" | cut -d' ' -f2
+	else
+		return 1
+	fi
 }
 
 # Detect OS
@@ -159,25 +172,50 @@ fi
 
 BINARY_NAME="ogc"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/ogc-${OS}-${ARCH}"
+CHECKSUM_URL="https://github.com/${REPO}/releases/download/${TAG}/checksums.txt"
 
 printf "${BLUE}Downloading ogc %s for %s-%s...${NC}\n" "$TAG" "$OS" "$ARCH"
 
 # Create a secure temporary directory
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'ogc' 2>/dev/null || (mkdir -p "./.ogc-tmp" && echo "./.ogc-tmp"))
 TMP_BIN="${TMP_DIR}/${BINARY_NAME}"
+TMP_SUMS="${TMP_DIR}/checksums.txt"
 
-if download_file "$DOWNLOAD_URL" "$TMP_BIN"; then
-    if [ -s "$TMP_BIN" ]; then
-        mv "$TMP_BIN" "${INSTALL_DIR}/${BINARY_NAME}"
-        chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
-        rm -rf "$TMP_DIR"
-        printf "${GREEN}Successfully installed ogc %s to %s/${BINARY_NAME}!${NC}\n" "$TAG" "$INSTALL_DIR"
-        check_path "$INSTALL_DIR"
-        exit 0
-    fi
+if download_file "$DOWNLOAD_URL" "$TMP_BIN" && download_file "$CHECKSUM_URL" "$TMP_SUMS"; then
+	if [ -s "$TMP_BIN" ] && [ -s "$TMP_SUMS" ]; then
+		# Perform checksum verification
+		EXPECTED_SUM=$(grep "ogc-${OS}-${ARCH}$" "$TMP_SUMS" | cut -d' ' -f1)
+		if [ -z "$EXPECTED_SUM" ]; then
+			printf "${RED}Error: Checksum for ogc-${OS}-${ARCH} not found in release checksums.${NC}\n" >&2
+			rm -rf "$TMP_DIR"
+			exit 1
+		fi
+
+		ACTUAL_SUM=$(calculate_sha256 "$TMP_BIN" || true)
+		if [ -z "$ACTUAL_SUM" ]; then
+			printf "${YELLOW}Warning: Could not calculate checksum (sha256sum, shasum, or openssl not found).${NC}\n"
+			printf "${YELLOW}Proceeding with caution...${NC}\n"
+		elif [ "$EXPECTED_SUM" != "$ACTUAL_SUM" ]; then
+			printf "${RED}Error: Checksum verification failed!${NC}\n" >&2
+			printf "Expected: %s\n" "$EXPECTED_SUM" >&2
+			printf "Actual:   %s\n" "$ACTUAL_SUM" >&2
+			printf "${RED}The downloaded binary might be corrupted or tampered with.${NC}\n" >&2
+			rm -rf "$TMP_DIR"
+			exit 1
+		else
+			printf "${GREEN}✓ Checksum verified successfully!${NC}\n"
+		fi
+
+		mv "$TMP_BIN" "${INSTALL_DIR}/${BINARY_NAME}"
+		chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+		rm -rf "$TMP_DIR"
+		printf "${GREEN}Successfully installed ogc %s to %s/${BINARY_NAME}!${NC}\n" "$TAG" "$INSTALL_DIR"
+		check_path "$INSTALL_DIR"
+		exit 0
+	fi
 fi
 
-# Clean up temp dir if download failed
+# Clean up temp dir if download/checksum failed
 rm -rf "$TMP_DIR"
 
 printf "${YELLOW}Binary download failed (URL: %s). Checking if Go is installed to compile from source...${NC}\n" "$DOWNLOAD_URL"

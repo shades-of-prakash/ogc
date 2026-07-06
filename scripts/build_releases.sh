@@ -40,5 +40,18 @@ printf "  - freebsd/amd64... "
 GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o "$BUILD_DIR/ogc-freebsd-amd64"
 printf "Done\n"
 
-printf "\nBinaries successfully built in %s/\n" "$BUILD_DIR"
+# Generate local checksums
+printf "\nGenerating checksums...\n"
+(
+  cd "$BUILD_DIR"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum ogc-* > checksums.txt
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 ogc-* > checksums.txt
+  else
+    printf "Warning: sha256sum/shasum not found. Checksums not generated.\n"
+  fi
+)
+
+printf "\nBinaries and checksums successfully built in %s/\n" "$BUILD_DIR"
 ls -lh "$BUILD_DIR"

@@ -37,6 +37,11 @@ jobs:
           # Build FreeBSD
           GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o build/ogc-freebsd-amd64
 
+          # Generate SHA-256 Checksums
+          cd build
+          sha256sum ogc-* > checksums.txt
+          cd ..
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -48,5 +53,6 @@ jobs:
             build/ogc-darwin-amd64
             build/ogc-darwin-arm64
             build/ogc-freebsd-amd64
+            build/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
